@@ -10,6 +10,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 export default function UserHome() {
 
+    // Application deployed to - https://tododeploy.vercel.app/
     const navigate = useNavigate();
     const [user, setUser] = useState({});
     const [openDialog, setOpenDialog] = useState(false);
@@ -85,8 +86,40 @@ export default function UserHome() {
         }
 
         setNewTaskCreated(newTodo);
-        const todoList = JSON.parse(localStorage.getItem('todoList')) || [];
-        todoList.push(newTodo);
+        let todoList = JSON.parse(localStorage.getItem('todoList')) || [];
+
+        // user.id
+
+        console.log(user.id, "USER ID");
+
+        if (todoList.length === 0 || !todoList.find((todoObject) => { return todoObject.userId === user.id })) {
+            todoList.push({
+                userId: user.id,
+                todos: [newTodo]
+            })
+        } else {
+            // if the todolist existed
+            // todoList = [{ userId: 'xyz', todos: [] }, { userId: 'abc', todos: [] }]
+            // eslint-disable-next-line array-callback-return
+            todoList = todoList.map((todoObject) => {
+                // When the todoList is greater than 0
+                // If the user was already there!
+                if (todoObject.userId === user.id) {
+                    todoObject.todos = [...todoObject.todos, ...[newTodo]]
+                }
+
+                return todoObject;
+            })
+
+
+        }
+
+        // todoList = [{ title: value, description, priority}, { title: value, description, priority} , { title: value, description, priority}]
+
+        // todoList = [{ userId: 'xyz', todos: [] }, { userId: 'abc', todos: [] }]
+
+
+        // todoList.push(newTodo);
 
         localStorage.setItem('todoList', JSON.stringify(todoList));
 
@@ -96,61 +129,54 @@ export default function UserHome() {
         handleClose();
     }
 
-    // const showCompletedTasks = () => {
-    //     setIsCompleteView(true);
+    const showCompletedTasks = () => {
+        let todoItem = todosList.filter((todo) => todo.userId === user.id)[0];
+        let todos = todoItem.todos.filter(todo => todo.isCompleted);
 
-    //     return todosList.filter((todo) => todo.isCompleted).map((todoItem) => {
-    //         return <CustomCard deleteTask={(id) => deleteTask(id)} setComplete={(id) => markTaskComplete(id)} todo={todoItem} />
-    //     })
-    // }
+        return todos.map((todoItem) => {
+            return <CustomCard key={todoItem.id} deleteTask={(id) => deleteTask(id)} setComplete={(id) => markTaskComplete(id)} todo={todoItem} />
+        }) 
+    }
 
     const showAllTasks = () => {
-        // setIsCompleteView(false);
-        return todosList.map((todoItem) => {
-            return <CustomCard deleteTask={(id) => deleteTask(id)} setComplete={(id) => markTaskComplete(id)} todo={todoItem} />
+        let todoItem = todosList.filter((todo) => todo.userId === user.id)[0];
+        let todos = todoItem.todos.filter(todo => !todo.isCompleted);
+
+        return todos.map((todoItem) => {
+            return <CustomCard key={todoItem.id} deleteTask={(id) => deleteTask(id)} setComplete={(id) => markTaskComplete(id)} todo={todoItem} />
         })
     }
 
-    // const showTasks = () => {
-    //     if (isCompleteView) {
-    //          // Show complete tasks
-    //          return showCompletedTasks();
-    //     } else {
-    //         // show All tasks
-    //         return showAllTasks();
-    //     }
-    // }
+    const logoutUser = () => {
+        localStorage.removeItem('current-user');
+        navigate('/user/login');
+    }
 
     return (
         <div>
             <AppBar position="static">
                 <Toolbar>
-                    <IconButton
-                        size="large"
-                        edge="start"
-                        color="inherit"
-                        aria-label="menu"
-                        sx={{ mr: 2 }}
-                        onClick={() => setOpenDrawer(true)}
-                    >
-                        <MenuIcon />
-                    </IconButton>
-                    <Typography variant="h6">
-                        Hello {user.userName}, Welcome to Todo
-                    </Typography>
-                    {/* <CustomButton /> */}
+                    <Box display="flex" justifyContent="space-between" alignItems="center" width="100%">
+                        <Box display="flex">
+                            <IconButton
+                                size="large"
+                                edge="start"
+                                color="inherit"
+                                aria-label="menu"
+                                sx={{ mr: 2 }}
+                                onClick={() => setOpenDrawer(true)}
+                            >
+                                <MenuIcon />
+                            </IconButton>
+                            <Typography variant="h6">
+                                Hello {user.userName}, Welcome to Todo
+                            </Typography>
+                        </Box>
+                        <CustomButton handleClick={logoutUser} color="secondary" variant="contained" title="logout" />
+                    </Box>
                 </Toolbar>
             </AppBar>
 
-            <Drawer
-                open={openDrawer}
-                // anchor={anchor}
-                // open={state[anchor]}
-                onClose={() => setOpenDialog(false)}
-            >
-                <CustomButton handleClick={showAllTasks} title="All Tasks" />
-                {/* <CustomButton handleClick={showCompletedTasks} title="Completed Tasks!" /> */}
-            </Drawer>
 
             <Dialog open={openDialog} onClose={handleClose}>
                 <DialogTitle>Todo</DialogTitle>
@@ -191,8 +217,17 @@ export default function UserHome() {
             {
                 todosList.length === 0 ? <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
                     <Typography>No Tasks added yet</Typography>
-                </Box> : <Box display="grid" gridTemplateColumns="repeat(4, 1fr)" gap="8px" margin="20px">
-                 { showAllTasks ()  }
+                </Box> : <Box >
+                    <Typography variant='h4'>Pending Tasks</Typography>
+                    <Box display="grid" gridTemplateColumns="repeat(4, 1fr)" gap="8px" margin="20px">
+                        {showAllTasks()}
+                    </Box>
+                    <Divider />
+                    <Typography variant='h4'>Completed Tasks</Typography>
+
+                    <Box display="grid" gridTemplateColumns="repeat(4, 1fr)" gap="8px" margin="20px">
+                        {showCompletedTasks()}
+                    </Box>
                 </Box>
             }
 

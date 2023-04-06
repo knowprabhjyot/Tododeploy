@@ -4,6 +4,7 @@ import CustomButton from '../../../components/CustomButton'
 import classes from './user-signup.module.css';
 import { Link, useNavigate } from 'react-router-dom';
 import CustomSnackbar from '../../../components/CustomSnackbar';
+import { v4 as uuidv4 } from 'uuid';
 
 export default function UserSignup() {
 
@@ -30,7 +31,8 @@ export default function UserSignup() {
     const newUser = {
       email,
       userName,
-      password
+      password,
+      id: uuidv4()
     }
 
     // I want to check if the localstorage already contains a user list
